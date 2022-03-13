@@ -93,6 +93,12 @@ export const android = <Global extends GlobalState>(app : ComponentFromConfig<Gl
         name : "generated.kt",
         template : "bundle"
     })
+    inject({
+        content : 'implementation "com.android.volley:volley:1.2.1"',
+        files : config.files,
+        name : "build.gradle",
+        template : "dependencies"
+    })
     return config.files
 }
 
@@ -143,12 +149,14 @@ const handleEvents = (app : Component<any, any>, global : any, local : any, conf
                         moment,
                         speech
                     })
-                    return kotlin(generated, "\t\t");
+                    return kotlin(generated, "\t\t\t");
                 }).join("\n")
                 inject({
-                    content : `\taddEvent("${app.id}", "${key}") { local, event ->
+                    content : `\t${key}(0 /* ${app.id} */, object : PollyCallback {
+\t\toverride fun invoke(event: Any, local: Any?, index: Any) {        
 ${fun}
-\t}`,
+\t\t}
+\t})`,
                     files : config.files,
                     name : "generated.kt",
                     template : "event"
