@@ -1,3 +1,9 @@
 package com.polygraphic
 
-/*=generated*/
+/*=bundle*/
+
+/*=global*/
+
+fun addEvents() {
+    /*=event*/
+}

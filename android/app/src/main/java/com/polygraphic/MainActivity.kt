@@ -7,12 +7,13 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         /*=create*/
+        addEvents()
         // setContentView(R.layout.activity_main)
     }
 
     private fun canBack() : Boolean {
         /*=onBack*/
-        return true;
+        return true
     }
 
     override fun onBackPressed() {
