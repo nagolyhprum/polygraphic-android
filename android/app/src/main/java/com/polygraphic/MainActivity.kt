@@ -15,7 +15,11 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         /*=create*/
         addEvents()
-        // setContentView(R.layout.activity_main)
+        setContentView(R.layout.activity_main)
+        initialize(findViewById(R.id.global), "global", Local(
+            state = global,
+            index = 0.0
+        ))
     }
 
     private fun canBack() : Boolean {

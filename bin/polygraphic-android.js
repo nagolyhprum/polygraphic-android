@@ -54,7 +54,11 @@ yargs.scriptName("polygraphic-android")
                         recursive: true
                     });
                 } catch(e) {}
-                await writeFile(path.join(argv.o, key), output[key]);
+				try {
+					await writeFile(path.join(argv.o, key), output[key]);
+				} catch(e) {
+					console.log("failed for", key)
+				}
 			}, Promise.resolve());
 		} catch(e) {
 			console.log("ERROR", e, JSON.stringify(e, null, "\t"));

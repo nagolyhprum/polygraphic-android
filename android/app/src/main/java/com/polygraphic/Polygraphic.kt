@@ -130,7 +130,7 @@ fun setValue(spinner: Spinner) {
     val value = cache?.get("value")
     if (value is String && data is List<*>) {
         val item = data.find {
-            it is Map<*, *> && it["key"] == value
+            it is Map<*, *> && getIdentifier(it) == value
         }
         if (item != null) {
             val index = data.indexOf(item)
@@ -166,6 +166,13 @@ fun getLocalCache(view: View): Local? {
     return localCache[key]
 }
 
+fun getIdentifier(input : Any?) : Any? {
+    if(input is Map<*, *>) {
+        return input["key"] ?: input["id"]
+    }
+    return null
+}
+
 class Component(
     private val view: View
 ) {
@@ -176,7 +183,7 @@ class Component(
                 view.isEnabled = isEnabled
             }
         },
-        "autoFocus" to { value, last ->
+        "focus" to { value, last ->
             main {
                 view.requestFocus()
                 showKeyboard(view)
@@ -277,7 +284,8 @@ class Component(
                             parent: ViewGroup?
                         ): View {
                             val id = view.context.resources.getResourceEntryName(view.id)
-                            val name = "activity_spinner_${id}"
+                            // val name = "activity_spinner_${id}"
+                            val name = "activity_spinner"
                             val layout = view.context.resources.getIdentifier(
                                 name,
                                 "layout",
@@ -320,7 +328,7 @@ class Component(
                         override fun getItemId(position: Int): Long {
                             val map = value[position]
                             if (map is Map<*, *>) {
-                                val key = map["key"]
+                                val key = getIdentifier(map)
                                 if (key is String) {
                                     return key.hashCode().toLong()
                                 }
@@ -363,7 +371,7 @@ class Component(
                                 )
                             }.filter { a ->
                                 !value.any { b ->
-                                    (a["item"] as Map<*, *>)["key"] == b["key"]
+                                    getIdentifier(a["item"]) == getIdentifier(b)
                                 }
                             }.reversed().forEach { item ->
                                 val child =
@@ -374,12 +382,12 @@ class Component(
                             // ADD
                             value.forEachIndexed { index, a ->
                                 if (!prev.any { b ->
-                                        a["key"] == b["key"]
+                                        getIdentifier(a) == getIdentifier(b)
                                     }) {
                                     if (a is MutableMap<*, *>) {
                                         val id = view.context.resources.getResourceEntryName(view.id)
                                         val layout = view.context.resources.getIdentifier(
-                                            "activity_${id}_${a["adapter"] ?: "adapter"}",
+                                            "${id}_${a["adapter"] ?: "adapter"}",
                                             "layout",
                                             view.context.packageName
                                         )
@@ -725,7 +733,7 @@ fun initialize(root: View, key: String, local: Local) {
                                 if (data is List<*>) {
                                     val map = data[position]
                                     if (map is Map<*, *>) {
-                                        val key = map["key"]
+                                        val key = getIdentifier(map)
                                         if (key is String) {
                                             val cache = element_cache[view] ?: mutableMapOf()
                                             if (cache.get("value") != key) {
@@ -875,7 +883,7 @@ class PollyPicker {
         val newFragment = DatePickerFragment(MainActivity.activity) {
             val callback = config["ok"]
             if (callback is ArgumentCallback) {
-                callback.invoke(
+                callback.call(
                         mapOf(
                                 "value" to it.toDouble()
                         )
