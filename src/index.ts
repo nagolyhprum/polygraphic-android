@@ -154,7 +154,7 @@ const getTagName = (component : Component<any, any>) : string => {
             return "TextView"
         case "option":
         case "date":
-            return "View"
+            return ""
     }
 }
 
@@ -174,6 +174,11 @@ const mapColor = (input : string | null | undefined) : string => {
         case "purple": return "#ffA020F0"
         case "black": return "#ff000000"
     }
+    if(input && input[0] === "#" && input.length === 9) {
+        // #rrggbbaa -> #aarrggbb
+        return "#" + input.slice(7) + input.slice(1, 7)
+
+    }
     return input || "#ffffffff";
 }
 
@@ -191,6 +196,9 @@ const handleProp = (
     return keys(component).reduce(async (promise, key) => {
         const props = await promise
         switch(key) {            
+            case "opacity":
+                props["android:alpha"] = `${component[key]}`
+                return props;
             case "id":
                 props["android:id"] = `@+id/${component[key]}`;
                 return props;
@@ -202,6 +210,18 @@ const handleProp = (
                 return props;
             case "name": {
                 const name = component[key]
+                if(name === "select") {
+                    props["app:backgroundTint"] = mapColor(component.color)
+                    config.files[`android/app/src/main/res/layout/${component.id}_spinner.xml`] = `<?xml version="1.0" encoding="utf-8"?>
+<TextView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/textview"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:textColor="${mapColor(component.color)}"
+    android:textSize="${component.size}sp"
+/>`
+                }
                 if(name === "root") {
                     props["xmlns:android"] = "http://schemas.android.com/apk/res/android"
                     props["xmlns:app"] = "http://schemas.android.com/apk/res-auto"
@@ -289,10 +309,19 @@ const handleProp = (
     }, Promise.resolve(props))
 }
 
-const generateLayout = async (component : Component<any, any>, global : any, local : any, config : AndroidConfig, tabs : string) : Promise<string> => {
-    handleEvents(component, global, local, config)
+const generateLayout = async (
+    component : Component<any, any>, 
+    global : any, 
+    local : any, 
+    config : AndroidConfig, 
+    tabs : string
+) : Promise<string> => {
     const name = getTagName(component)
+    if(!name) {
+        return "";
+    }
     const props = await handleProp(component, {}, config)
+    handleEvents(component, global, local, config)
     const children = (component.children ?? [])
     const adapters = component.adapters
     if(adapters) {
@@ -331,10 +360,18 @@ const handleEvents = (component : Component<any, any>, global : any, local : any
                         speech
                     });
                     inject({
-                        content : `${kotlin(generated, "\t")}`,
+                        content : `
+                        
+    extensions["onBack"] = object : Extension {
+        override fun call(vararg args: Any?): Any? {                       
+${kotlin(generated, "\t\t\t")}
+            return false
+        }
+    }
+                        `,
                         files : config.files,
-                        name : "mainactivity.kt",
-                        template : "onBack"
+                        name : "generated.kt",
+                        template : "event"
                     })
                 })
                 break;

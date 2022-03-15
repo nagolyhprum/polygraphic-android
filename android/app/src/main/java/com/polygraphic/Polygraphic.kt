@@ -173,6 +173,13 @@ fun getIdentifier(input : Any?) : Any? {
     return null
 }
 
+fun getName(input : Any?) : Any? {
+    if(input is Map<*, *>) {
+        return input["name"] ?: input["title"] ?: input["text"]
+    }
+    return null
+}
+
 class Component(
     private val view: View
 ) {
@@ -270,7 +277,7 @@ class Component(
                             )
                             val item = getItem(position)
                             if (item is Map<*, *>) {
-                                val text = item["name"]
+                                val text = getName(item)
                                 if (text is String) {
                                     textview.text = text
                                 }
@@ -284,8 +291,7 @@ class Component(
                             parent: ViewGroup?
                         ): View {
                             val id = view.context.resources.getResourceEntryName(view.id)
-                            // val name = "activity_spinner_${id}"
-                            val name = "activity_spinner"
+                            val name = "${id}_spinner"
                             val layout = view.context.resources.getIdentifier(
                                 name,
                                 "layout",
@@ -301,7 +307,7 @@ class Component(
                             )
                             val item = getItem(position)
                             if (item is Map<*, *>) {
-                                val text = item["name"]
+                                val text = getName(item)
                                 if (text is String) {
                                     textview.text = text
                                 }

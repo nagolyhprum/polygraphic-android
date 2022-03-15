@@ -22,13 +22,16 @@ class MainActivity : AppCompatActivity() {
         ))
     }
 
-    private fun canBack() : Boolean {
-        /*=onBack*/
-        return true
+    private fun isBackHandled() : Boolean {
+        val onBack = extensions["onBack"]
+        if(onBack != null) {
+            return onBack.call(null) == true
+        }
+        return false
     }
 
     override fun onBackPressed() {
-        if(canBack()) {
+        if(!isBackHandled()) {
             super.onBackPressed()
         }
     }
