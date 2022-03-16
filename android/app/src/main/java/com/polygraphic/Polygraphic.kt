@@ -717,9 +717,7 @@ fun initialize(root: View, key: String, local: Local) {
                                 element_cache[view] = cache
                                 val local = getLocalCache(view)
                                 onChange.invoke(
-                                    mapOf(
-                                        "value" to value
-                                    ),
+                                    value,
                                     local?.state,
                                     local?.index ?: -1.0
                                 )
@@ -747,9 +745,7 @@ fun initialize(root: View, key: String, local: Local) {
                                                 element_cache[view] = cache
                                                 val local = getLocalCache(view)
                                                 onChange.invoke(
-                                                    mapOf(
-                                                        "value" to key
-                                                    ),
+                                                    key,
                                                     local?.state,
                                                     local?.index ?: -1.0
                                                 )
@@ -785,9 +781,7 @@ fun initialize(root: View, key: String, local: Local) {
                                 if (cache?.get("value") != value) {
                                     val local = getLocalCache(view)
                                     onChange.invoke(
-                                        mapOf(
-                                            "value" to value
-                                        ),
+                                        value,
                                         local?.state,
                                         local?.index ?: -1.0
                                     )

@@ -179,7 +179,7 @@ const mapColor = (input : string | null | undefined) : string => {
         return "#" + input.slice(7) + input.slice(1, 7)
 
     }
-    return input || "#ffffffff";
+    return input || "#00000000";
 }
 
 const keys = <T>(input : T) => Object.keys(input) as Array<keyof T>
@@ -205,11 +205,47 @@ const handleProp = (
             case "grow":
                 props["android:layout_weight"] = "1"
                 return props;
-            case "background":
-                props["android:background"] = mapColor(component[key]);
+            case "onClick":
+                props["android:clipToPadding"] = "true";
+                props["android:clipToOutline"] = "true";
+                props["android:clipChildren"] = "true";
+                props["android:clickable"] = "true"
+                props["android:focusable"] = "true"
+                if(component.width === component.height && component.width / 2 === component.round) { 
+                    props["android:foreground"] = "?selectableItemBackgroundBorderless"
+                } else {
+                    props["android:foreground"] = "?selectableItemBackground"
+                }
                 return props;
+            case "shadow":
+                props["android:elevation"] = "1dp"
+                return props;
+            case "round":
+            case "background": {
+                const background = {
+                    round : component.round || 0,
+                    color : mapColor(component.background)
+                }
+                const name = `background_${
+                    background.color.replace(/\W/g, "")
+                }_${
+                    background.round
+                }round`.toLowerCase()
+                config.files[`android/app/src/main/res/drawable/${name}.xml`] = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <corners android:radius="${background.round}dp" />
+    <solid android:color="${background.color}"/>
+</shape>`
+                props["android:background"] = `@drawable/${name}`;
+                return props;
+            }
             case "name": {
                 const name = component[key]
+                if(name === "scrollable") {
+                    props["android:clipToPadding"] = "true";
+                    props["android:clipToOutline"] = "true";
+                    props["android:clipChildren"] = "true";
+                }
                 if(name === "select") {
                     props["app:backgroundTint"] = mapColor(component.color)
                     config.files[`android/app/src/main/res/layout/${component.id}_spinner.xml`] = `<?xml version="1.0" encoding="utf-8"?>
@@ -280,10 +316,6 @@ const handleProp = (
                 }
                 return props
             }
-            case "onClick":
-                props["android:clickable"] = "true"
-                props["android:focusable"] = "true"
-                return props;
             case "position":
                 const position = component[key] || {}
                 keys(position).forEach(key => {
@@ -293,6 +325,11 @@ const handleProp = (
                 return props
             case "alt":
                 props["android:contentDescription"] = component[key] || ""
+                return props;
+            case "clip":                
+                props["android:clipToPadding"] = "true";
+                props["android:clipToOutline"] = "true";
+                props["android:clipChildren"] = "true";
                 return props;
             case "width":
             case "height":
@@ -320,7 +357,11 @@ const generateLayout = async (
     if(!name) {
         return "";
     }
-    const props = await handleProp(component, {}, config)
+    const props = await handleProp(component, {
+        "android:clipToPadding" : "false",
+        "android:clipToOutline" : "false",
+        "android:clipChildren" : "false",
+    }, config)
     handleEvents(component, global, local, config)
     const children = (component.children ?? [])
     const adapters = component.adapters
