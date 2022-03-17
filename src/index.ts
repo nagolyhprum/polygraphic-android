@@ -63,7 +63,7 @@ const inject = ({
 }
 
 export const android = <Global extends GlobalState>(app : ComponentFromConfig<Global, Global>) => async (state : Global) => {
-    state.features = ["picker.date"]
+    state.features = ["picker.date", "speech.listen"]
     const files = await getFilesInFolder("android")
     const config : AndroidConfig = {
         dependencies : new Set<string>([]),

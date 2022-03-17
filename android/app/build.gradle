@@ -9,9 +9,9 @@ android {
     defaultConfig {
 
         /*=config*/
-//      applicationId "com.polygraphic"
-//      versionCode 1
-//      versionName "1.0"
+        applicationId "com.polygraphic"
+        versionCode 1
+        versionName "1.0"
         minSdk 16
         targetSdk 31
 

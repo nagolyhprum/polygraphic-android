@@ -886,6 +886,8 @@ val SPEECH_RESULT_CODE = 6874
 
 class PollySpeechRecognition
 
+val speech = PollySpeechRecognition()
+
 var speechRecognitionCallback: ArgumentCallback? = null
 
 class DatePickerFragment(
