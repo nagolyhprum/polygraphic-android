@@ -18,6 +18,10 @@ const moment = () => ({
     isSame : () => false
 })
 
+const picker = {
+    date : () => {}
+}
+
 const isDirectory = async (file : string) => {
     const stat = await fs.stat(file);
     return stat.isDirectory()
@@ -406,7 +410,8 @@ const handleEvents = (component : Component<any, any>, global : any, local : any
                         global,
                         local,
                         moment,
-                        speech
+                        speech,
+                        picker
                     });
                     inject({
                         content : `
@@ -430,7 +435,8 @@ ${kotlin(generated, "\t\t\t")}
                         global,
                         local,
                         moment,
-                        speech
+                        speech,
+                        picker
                     })
                     return kotlin(generated, "\t\t\t");
                 }).join("\n")
@@ -454,7 +460,8 @@ ${kotlin(generated, "\t\t\t")}
                         global,
                         local,
                         moment,
-                        speech
+                        speech,
+                        picker
                     })
                     return kotlin(generated, "\t\t\t");
                 }).join("\n")

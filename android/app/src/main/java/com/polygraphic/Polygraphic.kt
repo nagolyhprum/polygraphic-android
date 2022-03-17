@@ -902,7 +902,7 @@ class DatePickerFragment(
         val day = c.get(Calendar.DAY_OF_MONTH)
         val dialog = DatePickerDialog(activity, this, year, month, day)
         dialog.setButton(DialogInterface.BUTTON_NEUTRAL, "CLEAR") { _, _ ->
-            callback(0)
+            callback(-1)
             dismiss()
         }
         return dialog
