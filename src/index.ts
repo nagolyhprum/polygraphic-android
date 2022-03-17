@@ -239,6 +239,9 @@ const handleProp = (
                 props["android:background"] = `@drawable/${name}`;
                 return props;
             }
+            case "size":
+                props["android:textSize"] = `${component.size || 16}sp`;
+                return props
             case "name": {
                 const name = component[key]
                 if(name === "root") {
@@ -334,10 +337,12 @@ const handleProp = (
                 props["android:clipToOutline"] = "true";
                 props["android:clipChildren"] = "true";
                 return props;
+            case "text":
+                props["android:text"] = component[key] || "";
+                return props;
             case "width":
             case "height":
             case "children":
-            case "text":
             case "adapters":
             case "observe":
             case "onChange":
@@ -385,7 +390,7 @@ const generateLayout = async (
     if(!name) return ""
     const content = (await Promise.all(children.map(child => {
         return generateLayout(child, global, local, config, tabs + "\t")
-    }))).join("\n") || component.text
+    }))).join("\n")
     return `${component.name === "root" ? `<?xml version="1.0" encoding="utf-8"?>\n` : ""}${tabs}<${name}\n\t${tabs}${
         Object.keys(props).map(key => `${key}="${props[key]}"`).join(`\n\t${tabs}`)
     }\n${tabs}${content ? `>\n${content}\n${tabs}</${name}>` : "/>"}`;
