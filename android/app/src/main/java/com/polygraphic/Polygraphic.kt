@@ -205,42 +205,27 @@ class Component(
                     Log.d("animation", "${view.tag} - ${animation}")
                     val callback: (Float) -> Unit = { percent ->
                         val width = view.measuredWidth
-                        if(animation == "fade_normal-in" || animation == "fade_reverse-in") {
+                        if(animation == "opacity_in") {
                             view.alpha = percent
                         }
-                        if(animation == "fade_normal-out" || animation == "fade_reverse-out") {
+                        if(animation == "opacity_out") {
                             view.alpha = 1 - percent
                         }
-                        if(animation == "left_normal-in") {
+                        if(animation == "left_in") {
                             view.translationX = -width * (1 - percent)
                             view.alpha = percent
                         }
-                        if(animation == "left_normal-out") {
+                        if(animation == "left_out") {
                             view.translationX = -width * percent
                             view.alpha = 1 - percent
                         }
-                        if(animation == "right_normal-in") {
+                        if(animation == "right_in") {
                             view.translationX = width * (1 - percent)
                             view.alpha = percent
                         }
-                        if(animation == "right_normal-out") {
+                        if(animation == "right_out") {
                             view.translationX = width * percent
                             view.alpha = 1 - percent
-                        }
-
-                        if(animation == "left_reverse-in") {
-                            // TODO
-                        }
-                        if(animation == "left_reverse-out") {
-                            view.translationX = width * percent
-                            view.alpha = 1 - percent
-                        }
-                        if(animation == "right_reverse-in") {
-                            view.translationX = -width * (1 - percent)
-                            view.alpha = percent
-                        }
-                        if(animation == "right_reverse-out") {
-                            // TODO
                         }
                         val cache = element_cache[view] ?: mutableMapOf()
                         cache["opacity"] = view.alpha

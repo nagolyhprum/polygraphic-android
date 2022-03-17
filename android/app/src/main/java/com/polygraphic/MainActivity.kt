@@ -34,5 +34,6 @@ class MainActivity : AppCompatActivity() {
         if(!isBackHandled()) {
             super.onBackPressed()
         }
+        updateAll("onBack")
     }
 }
