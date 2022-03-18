@@ -3,6 +3,7 @@ import path from 'path'
 import { Adapter, code, Component, ComponentFromConfig, GlobalState, kotlin, kotlinBundle, MATCH, ProgrammingLanguage, WRAP } from 'polygraphic'
 import svg2vectordrawable from 'svg2vectordrawable';
 import { AndroidConfig } from './types'
+import { createCanvas, loadImage } from 'canvas'
 
 const speech = {
 	listen : () => {
@@ -20,6 +21,57 @@ const moment = () => ({
 
 const picker = {
     date : () => {}
+}
+
+const images = [{
+    name : "mdpi",
+    size : 48
+}, {
+    name : "hdpi",
+    size : 72
+}, {
+    name : "xhdpi",
+    size : 96
+}, {
+    name : "xxhdpi",
+    size : 144
+}, {
+    name : "xxxhdpi",
+    size : 192
+}]
+
+const createImage = async ({
+    buffer,
+    size,
+    isRound,
+    background,
+    percent
+} : {
+    buffer : Buffer
+    background : string
+    percent : number
+    size : number
+    isRound : boolean
+}) => {
+    const canvas = createCanvas(size, size)
+    const context = canvas.getContext("2d")
+    if(isRound) {
+        const half = size / 2
+        context.ellipse(half, half, half, half, 0, 0, 2 * Math.PI)
+        context.clip()
+    }
+    context.fillStyle = background
+    context.fillRect(0, 0, size, size)
+    const image = await loadImage(buffer)
+	const resize = size / Math.min(image.width, image.height) * percent;
+	const width = image.width * resize;
+	const height = image.height * resize;
+	const x = size / 2 - width / 2;
+	const y = size / 2 - height / 2;
+	image.width = width;
+	image.height = height;
+	context.drawImage(image, x, y, width, height);
+    return canvas.toBuffer("image/png")
 }
 
 const isDirectory = async (file : string) => {
@@ -64,6 +116,29 @@ const inject = ({
             )
         }
     })
+}
+
+const widthRegexp = /android:width="(\d+)dp"/
+const heightRegexp = /android:width="(\d+)dp"/
+
+const getNumber = (input : string, regexp : RegExp) => {
+    const result = regexp.exec(input);
+    if(result) {
+        return Number(result[1])
+    }
+    return 0
+}
+
+const scale = (input : string, percent : number) => {
+    const firstCloser = input.indexOf(">")
+    const lastOpener = input.lastIndexOf("<")
+    const width = getNumber(input, widthRegexp)
+    const height = getNumber(input, heightRegexp)
+    return input.slice(0, firstCloser) + `><group 
+        android:scaleX="${percent}"
+        android:scaleY="${percent}"
+        android:translateX="${width / 2 - width / 2 * percent}"
+        android:translateY="${height / 2 - height / 2 * percent}">` + input.slice(firstCloser + 1, lastOpener) + "</group>" + input.slice(lastOpener)
 }
 
 export const android = <Global extends GlobalState>(app : ComponentFromConfig<Global, Global>) => async (state : Global) => {
@@ -217,6 +292,36 @@ versionName "${manifest.version.name}"
 <resources>
     <string name="app_name">${manifest.name}</string>
 </resources>`
+                    config.files["android/app/src/main/res/drawable/ic_launcher_background.xml"] = `<?xml version="1.0" encoding="utf-8"?>
+<shape xmlns:android="http://schemas.android.com/apk/res/android">
+    <solid android:color="${manifest.background_color}"/>
+</shape>
+`
+                    const foreground = await svg2vectordrawable(await fs.readFile(manifest.icons.src.slice("file://".length), "utf-8"), {
+                        fillBlack : true,
+                        floatPrecision : 2,                        
+                    })
+                    delete config.files["android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml"]
+                    config.files["android/app/src/main/res/drawable/ic_launcher_foreground.xml"] = scale(foreground, manifest.icons.percent)
+                    await Promise.all(images.map(async item => {
+                        delete config.files[`android/app/src/main/res/mipmap-${item.name}/ic_launcher.webp`]
+                        delete config.files[`android/app/src/main/res/mipmap-${item.name}/ic_launcher_round.webp`]
+                        const buffer = await readFile(manifest.icons.src.slice("file://".length))
+                        config.files[`android/app/src/main/res/mipmap-${item.name}/ic_launcher.png`] = await createImage({
+                            buffer,
+                            background : manifest.background_color,
+                            isRound : false,
+                            percent : manifest.icons.percent,
+                            size : item.size
+                        })
+                        config.files[`android/app/src/main/res/mipmap-${item.name}/ic_launcher_round.png`] = await createImage({
+                            buffer,
+                            background : manifest.background_color,
+                            isRound : true,
+                            percent : manifest.icons.percent,
+                            size : item.size
+                        })
+                    }))
                 }
                 return props;
             }
