@@ -200,6 +200,26 @@ const handleProp = (
     return keys(component).reduce(async (promise, key) => {
         const props = await promise
         switch(key) {            
+            case "manifest": {
+                const manifest = component[key]
+                if(manifest) {
+                    inject({
+                        files : config.files,
+                        content : `
+applicationId "${manifest.package.android}"
+versionCode ${manifest.version.code}
+versionName "${manifest.version.name}"
+                        `,
+                        name : "build.gradle",
+                        template : "config"
+                    })
+                    config.files["android/app/src/main/res/values/strings.xml"] = `<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">${manifest.name}</string>
+</resources>`
+                }
+                return props;
+            }
             case "opacity":
                 props["android:alpha"] = `${component[key]}`
                 return props;
