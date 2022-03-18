@@ -511,6 +511,14 @@ versionName "${manifest.version.name}"
                 props["android:gravity"] = gravity.join("|")
                 return props;
             }
+            case "onEnter":
+                props["android:imeOptions"]="actionGo"
+                props["android:maxLines"]="1"
+                props["android:inputType"]="text"
+                return props;
+            case "onBack":
+            case "onInit":
+            case "funcs":
             case "width":
             case "height":
             case "children":
