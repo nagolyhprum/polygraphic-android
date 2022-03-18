@@ -469,6 +469,48 @@ versionName "${manifest.version.name}"
             case "text":
                 props["android:text"] = component[key] || "";
                 return props;
+            case "mainAxisAlignment":
+            case "crossAxisAlignment": {
+                const {
+                    mainAxisAlignment = "start", 
+                    crossAxisAlignment = "start"
+                } = component
+                const gravity = [];
+                if(component.name === "row") {
+                    // start, center_horizontal, end, top, center_vertical, bottom
+                    if(mainAxisAlignment === "start") {
+                        gravity.push("start")
+                    } else if(mainAxisAlignment === "center") {
+                        gravity.push("center_horizontal")
+                    } else if(mainAxisAlignment === "end") {
+                        gravity.push("end")
+                    }
+                    if(crossAxisAlignment === "start") {
+                        gravity.push("top")
+                    } else if(crossAxisAlignment === "center") {
+                        gravity.push("center_vertical")
+                    } else if(crossAxisAlignment === "end") {
+                        gravity.push("bottom")
+                    }
+                } else if(component.name === "column") {
+                    if(crossAxisAlignment === "start") {
+                        gravity.push("start")
+                    } else if(crossAxisAlignment === "center") {
+                        gravity.push("center_horizontal")
+                    } else if(crossAxisAlignment === "end") {
+                        gravity.push("end")
+                    }
+                    if(mainAxisAlignment === "start") {
+                        gravity.push("top")
+                    } else if(mainAxisAlignment === "center") {
+                        gravity.push("center_vertical")
+                    } else if(mainAxisAlignment === "end") {
+                        gravity.push("bottom")
+                    }
+                }
+                props["android:gravity"] = gravity.join("|")
+                return props;
+            }
             case "width":
             case "height":
             case "children":
