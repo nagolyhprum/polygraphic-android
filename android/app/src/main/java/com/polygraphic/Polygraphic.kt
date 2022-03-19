@@ -186,20 +186,20 @@ class Component(
         }
     }
 
-    private val handlers = mapOf<String, (value: Any?, last: Any?) -> Unit>(
-        "disabled" to { value, last ->
+    private val handlers = mapOf<String, (value: Any?) -> Unit>(
+        "disabled" to { value ->
             val isEnabled = hasValue(value).not()
             main {
                 view.isEnabled = isEnabled
             }
         },
-        "focus" to { value, last ->
+        "focus" to { value ->
             main {
                 view.requestFocus()
                 showKeyboard(view)
             }
         },
-        "animation" to { value, last ->
+        "animation" to { value ->
             if(value is Map<*, *>) {
                 val name = value["name"]
                 val direction = value["direction"]
@@ -235,7 +235,7 @@ class Component(
                 }
             }
         },
-        "data" to { value, last ->
+        "data" to { value ->
             val inflater = getLayoutInflater(view)
             if (view is Spinner) {
                 if (value is List<*>) {
@@ -351,6 +351,8 @@ class Component(
             } else if (view is ViewGroup) {
                 if (value is List<*>) {
                     main {
+                        val last = element_cache["prevData"]
+                        element_cache["prevData"] = value
                         val prev = last as? List<Map<String, Any>>
                             ?: mutableListOf<MutableMap<String, Any>>()
                         Log.d("data", "prev : $prev")
@@ -425,7 +427,7 @@ class Component(
                 }
             }
         },
-        "value" to { value, last ->
+        "value" to { value ->
             if (view is EditText && value is String) {
                 if (view.text.toString() != value) {
                     main {
@@ -446,7 +448,7 @@ class Component(
                 }
             }
         },
-        "visible" to { value, last ->
+        "visible" to { value ->
             val visibility = when (hasValue(value)) {
                 true -> View.VISIBLE
                 false -> View.GONE
@@ -455,7 +457,7 @@ class Component(
                 view.visibility = visibility
             }
         },
-        "text" to { value, last ->
+        "text" to { value ->
             val wrapped = value ?: ""
             if (view is TextView && wrapped is String) {
                 main {
@@ -463,7 +465,7 @@ class Component(
                 }
             }
         },
-        "color" to { value, last ->
+        "color" to { value ->
             if (view is TextView && value is String) {
                 val color = Color.parseColor(value)
                 main {
@@ -471,14 +473,14 @@ class Component(
                 }
             }
         },
-        "alt" to { value, last ->
+        "alt" to { value ->
             if (view is ImageView && value is String) {
                 main {
                     view.setContentDescription(value)
                 }
             }
         },
-        "src" to { value, last ->
+        "src" to { value ->
             if (view is ImageView && value is String) {
                 val name = "ic_" + value.split(".")[0]
                 val id = view.context.resources.getIdentifier(
@@ -505,7 +507,7 @@ class Component(
                 }
             }
         },
-        "opacity" to { value, last ->
+        "opacity" to { value ->
             if (value is Double) {
                 val alpha = value.toFloat()
                 main {
@@ -513,14 +515,14 @@ class Component(
                 }
             }
         },
-        "background" to { value, last ->
+        "background" to { value ->
             if (value is String) {
                 main {
                     DrawableCompat.setTint(view.background, Color.parseColor(value))
                 }
             }
         },
-        "absolute" to { value, last ->
+        "absolute" to { value ->
             if (value is Map<*, *>) {
                 val layoutParams = RelativeLayout.LayoutParams(
                     view.layoutParams.width,
@@ -555,7 +557,8 @@ class Component(
                 }
             }
         },
-        "width" to { value, last ->
+        "width" to { value ->
+            val last = element_cache["width"]
             if (value is Double) {
                 val layoutParams = view.layoutParams
                 val to = (value * view.context.resources.displayMetrics.density).toInt()
@@ -573,7 +576,8 @@ class Component(
                 }
             }
         },
-        "height" to { value, last ->
+        "height" to { value ->
+            val last = element_cache["height"]
             if (value is Double) {
                 val layoutParams = view.layoutParams
                 val to = (value * view.context.resources.displayMetrics.density).toInt()
@@ -600,7 +604,7 @@ class Component(
             element_cache[key] = value
             val handler = handlers[key]
             if (handler != null) {
-                handler(value, prev)
+                handler(value)
                 return
             }
             throw NotImplementedError("$key for Component")
@@ -826,11 +830,10 @@ fun updateAll(who : String) {
 
     for (observer in observers.toMap()) {
         val view = observer.key
-        val local = getLocalCache(view)
         events[view.id]?.observe?.invoke(
             observer.value,
-            local?.state,
-            local?.index ?: -1.0
+            observer.value.local.state,
+            observer.value.local.index
         )
     }
 
