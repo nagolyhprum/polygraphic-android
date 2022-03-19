@@ -138,7 +138,7 @@ fun remove(view: View) {
 
 fun getIdentifier(input : Any?) : Any? {
     if(input is Map<*, *>) {
-        return input["key"] ?: input["id"]
+        return input["key"] ?: input["id"] ?: input["value"]
     }
     return null
 }
@@ -151,7 +151,7 @@ fun getName(input : Any?) : Any? {
 }
 
 fun animate(callback : (value : Float) -> Unit) {
-    var animator = ValueAnimator.ofFloat(0f, 1f)
+    val animator = ValueAnimator.ofFloat(0f, 1f)
     animator.addUpdateListener {
         callback(it.animatedFraction)
     }
@@ -164,11 +164,11 @@ class Component(
     val view: View,
     val local: Local
 ) {
-    val element_cache = mutableMapOf<String, Any?>()
+    val elementCache = mutableMapOf<String, Any?>()
 
     fun setValue(spinner: Spinner) {
-        val data = element_cache["data"]
-        val value = element_cache["value"]
+        val data = elementCache["data"]
+        val value = elementCache["value"]
         if (value is String && data is List<*>) {
             val item = data.find {
                 it is Map<*, *> && getIdentifier(it) == value
@@ -224,7 +224,7 @@ class Component(
                             view.translationX = width * percent
                             view.alpha = 1 - percent
                         }
-                        element_cache["opacity"] = view.alpha
+                        elementCache["opacity"] = view.alpha
                     }
                 }
             }
@@ -344,8 +344,8 @@ class Component(
             } else if (view is ViewGroup) {
                 if (value is List<*>) {
                     main {
-                        val last = element_cache["prevData"]
-                        element_cache["prevData"] = value
+                        val last = elementCache["prevData"]
+                        elementCache["prevData"] = value
                         val prev = last as? List<Map<String, Any>>
                             ?: mutableListOf<MutableMap<String, Any>>()
                         Log.d("data", "prev : $prev")
@@ -549,7 +549,7 @@ class Component(
             }
         },
         "width" to { value ->
-            val last = element_cache["width"]
+            val last = elementCache["width"]
             if (value is Double) {
                 val layoutParams = view.layoutParams
                 val to = (value * view.context.resources.displayMetrics.density).toInt()
@@ -568,7 +568,7 @@ class Component(
             }
         },
         "height" to { value ->
-            val last = element_cache["height"]
+            val last = elementCache["height"]
             if (value is Double) {
                 val layoutParams = view.layoutParams
                 val to = (value * view.context.resources.displayMetrics.density).toInt()
@@ -590,9 +590,9 @@ class Component(
     )
 
     fun set(key: String, value: Any?) {
-        val prev = element_cache[key]
-        if (!element_cache.containsKey(key) || prev != value) {
-            element_cache[key] = value
+        val prev = elementCache[key]
+        if (!elementCache.containsKey(key) || prev != value) {
+            elementCache[key] = value
             val handler = handlers[key]
             if (handler != null) {
                 handler(value)
@@ -625,12 +625,8 @@ fun isReady(): Boolean {
     return false
 }
 
-fun getLocalCache(view : View) : Local? {
-    return observers[view]?.local
-}
-
 fun getElementCache(view : View) : MutableMap<String, Any?>? {
-    return observers[view]?.element_cache
+    return observers[view]?.elementCache
 }
 
 fun initialize(root: View, local: Local) {
@@ -645,11 +641,10 @@ fun initialize(root: View, local: Local) {
                         background {
                             if (isReady()) {
                                 closeKeyboard(view)
-                                val local = getLocalCache(view)
                                 onClick.invoke(
                                     mapOf<String, Any>(),
-                                    local?.state,
-                                    local?.index ?: -1.0
+                                    local.state,
+                                    local.index
                                 )
                                 updateAll("onClick")
                             }
@@ -662,11 +657,10 @@ fun initialize(root: View, local: Local) {
                         background {
                             if (isReady()) {
                                 closeKeyboard(view)
-                                val local = getLocalCache(view)
                                 onContext.invoke(
                                     mapOf<String, Any>(),
-                                    local?.state,
-                                    local?.index ?: -1.0
+                                    local.state,
+                                    local.index
                                 )
                                 updateAll("onLongClick")
                             }
@@ -680,11 +674,10 @@ fun initialize(root: View, local: Local) {
                         if (actionId == EditorInfo.IME_ACTION_GO) {
                             if (isReady()) {
                                 closeKeyboard(view)
-                                val local = getLocalCache(view)
                                 onEnter.invoke(
                                     mapOf<String, Any>(),
-                                    local?.state,
-                                    local?.index ?: -1.0
+                                    local.state,
+                                    local.index
                                 )
                                 updateAll("onEnter")
                             }
@@ -699,11 +692,10 @@ fun initialize(root: View, local: Local) {
                             val cache = getElementCache(view)
                             if (cache != null && cache["value"] != value) {
                                 cache["value"] = value
-                                val local = getLocalCache(view)
                                 onChange.invoke(
                                     value,
-                                    local?.state,
-                                    local?.index ?: -1.0
+                                    local.state,
+                                    local.index ?: -1.0
                                 )
                                 updateAll("onChange CheckBox")
                             }
@@ -726,11 +718,10 @@ fun initialize(root: View, local: Local) {
                                             val cache = getElementCache(view)
                                             if (cache != null && cache["value"] != key) {
                                                 cache["value"] = key
-                                                val local = getLocalCache(view)
                                                 onChange.invoke(
                                                     key,
-                                                    local?.state,
-                                                    local?.index ?: -1.0
+                                                    local.state,
+                                                    local.index ?: -1.0
                                                 )
                                                 updateAll("onChange Spinner")
                                             }
@@ -762,11 +753,10 @@ fun initialize(root: View, local: Local) {
                                 val value = s.toString()
                                 val cache = getElementCache(view)
                                 if (cache != null && cache["value"] != value) {
-                                    val local = getLocalCache(view)
                                     onChange.invoke(
                                         value,
-                                        local?.state,
-                                        local?.index ?: -1.0
+                                        local.state,
+                                        local.index
                                     )
                                     updateAll("onChange EditText")
                                 }
@@ -787,14 +777,13 @@ fun initialize(root: View, local: Local) {
                             val width = right - left
                             val height = bottom - top
                             if(width != oldWidth && height != oldHeight) {
-                                val local = getLocalCache(view)
                                 onResize.invoke(
                                     mapOf(
                                         "width" to (width / density).toDouble(),
                                         "height" to (height / density).toDouble()
                                     ),
-                                    local?.state,
-                                    local?.index ?: -1.0
+                                    local.state,
+                                    local.index
                                 )
                                 updateAll("onResize")
                             }
