@@ -300,7 +300,7 @@ versionName "${manifest.version.name}"
 					floatPrecision : 2,                        
 				});
 				delete config.files["android/app/src/main/res/drawable-v24/ic_launcher_foreground.xml"];
-				config.files["android/app/src/main/res/drawable/ic_launcher_foreground.xml"] = scale(foreground, manifest.icons.percent);
+				config.files["android/app/src/main/res/drawable/ic_launcher_foreground.xml"] = scale(foreground, manifest.icons.percent * .8);
 				await Promise.all(images.map(async item => {
 					delete config.files[`android/app/src/main/res/mipmap-${item.name}/ic_launcher.webp`];
 					delete config.files[`android/app/src/main/res/mipmap-${item.name}/ic_launcher_round.webp`];

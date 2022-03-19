@@ -25,11 +25,16 @@ import androidx.core.view.children
 import androidx.fragment.app.DialogFragment
 import java.util.*
 
+val events = mutableMapOf<Int, PollyEvent>()
+val observers = mutableMapOf<View, Component>()
+var speechRecognitionCallback: ArgumentCallback? = null
+var last_event = System.currentTimeMillis()
+
 val TIMEOUT = 300L
 
 data class Local(
-    val index: Double,
-    val state: Any?
+    var index: Double,
+    var state: Any?
 )
 
 interface PollyCallback {
@@ -45,8 +50,6 @@ data class PollyEvent(
     val onChange: PollyCallback? = null,
     val onResize: PollyCallback? = null
 )
-
-val events = mutableMapOf<Int, PollyEvent>()
 
 fun setEventForId(id: Int, callback: (PollyEvent) -> PollyEvent) {
     events[id] = callback(events[id] ?: PollyEvent())
@@ -124,25 +127,8 @@ fun getLayoutInflater(view: View): LayoutInflater {
     return view.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
 }
 
-fun setValue(spinner: Spinner) {
-    val cache = element_cache[spinner]
-    val data = cache?.get("data")
-    val value = cache?.get("value")
-    if (value is String && data is List<*>) {
-        val item = data.find {
-            it is Map<*, *> && getIdentifier(it) == value
-        }
-        if (item != null) {
-            val index = data.indexOf(item)
-            spinner.setSelection(index)
-        }
-    }
-}
-
 fun remove(view: View) {
-    localCache.remove(view.tag as String?)
-    element_cache.remove(view)
-    observers[view.id]?.remove(view)
+    observers.remove(view)
     if (view is ViewGroup) {
         view.children.asSequence().toList().forEach {
             remove(it)
@@ -154,16 +140,6 @@ fun generateName(): String {
     val a = Math.random().toBigDecimal().toPlainString().split(".").last().toLong().toString(16)
     val b = System.currentTimeMillis().toString(16)
     return "_$a$b"
-}
-
-val element_cache = mutableMapOf<View, MutableMap<String, Any?>>()
-var animations = mutableListOf<(progress : Float) -> Unit>()
-val localCache = mutableMapOf<String, Local>()
-val observers = mutableMapOf<Int, MutableList<View>>()
-
-fun getLocalCache(view: View): Local? {
-    val key = view.tag as? String
-    return localCache[key]
 }
 
 fun getIdentifier(input : Any?) : Any? {
@@ -180,9 +156,36 @@ fun getName(input : Any?) : Any? {
     return null
 }
 
+fun animate(callback : (value : Float) -> Unit) {
+    var animator = ValueAnimator.ofFloat(0f, 1f)
+    animator.addUpdateListener {
+        callback(it.animatedFraction)
+    }
+    main {
+        animator.start()
+    }
+}
+
 class Component(
-    private val view: View
+    val view: View,
+    val local: Local
 ) {
+    val element_cache = mutableMapOf<String, Any?>()
+
+    fun setValue(spinner: Spinner) {
+        val data = element_cache["data"]
+        val value = element_cache["value"]
+        if (value is String && data is List<*>) {
+            val item = data.find {
+                it is Map<*, *> && getIdentifier(it) == value
+            }
+            if (item != null) {
+                val index = data.indexOf(item)
+                spinner.setSelection(index)
+            }
+        }
+    }
+
     private val handlers = mapOf<String, (value: Any?, last: Any?) -> Unit>(
         "disabled" to { value, last ->
             val isEnabled = hasValue(value).not()
@@ -203,7 +206,7 @@ class Component(
                 if(name is String && direction is String) {
                     val animation = "${name}_${direction}"
                     Log.d("animation", "${view.tag} - ${animation}")
-                    val callback: (Float) -> Unit = { percent ->
+                    animate { percent ->
                         val width = view.measuredWidth
                         if(animation == "opacity_in") {
                             view.alpha = percent
@@ -227,11 +230,8 @@ class Component(
                             view.translationX = width * percent
                             view.alpha = 1 - percent
                         }
-                        val cache = element_cache[view] ?: mutableMapOf()
-                        cache["opacity"] = view.alpha
-                        element_cache[view] = cache
+                        element_cache["opacity"] = view.alpha
                     }
-                    animations.add(callback)
                 }
             }
         },
@@ -353,6 +353,8 @@ class Component(
                     main {
                         val prev = last as? List<Map<String, Any>>
                             ?: mutableListOf<MutableMap<String, Any>>()
+                        Log.d("data", "prev : $prev")
+                        Log.d("data", "curr : $value")
                         if (prev.map { it["adapter"] } != (value as List<Map<String, Any>>).map { it["adapter"] }) {
                             // REMOVE
                             prev.mapIndexed { index, item ->
@@ -369,6 +371,7 @@ class Component(
                                     view.children.iterator().asSequence().toList()[item["index"] as Int]
                                 remove(child)
                                 view.removeView(child)
+                                Log.d("data", "removed : $item")
                             }
                             // ADD
                             value.forEachIndexed { index, a ->
@@ -391,6 +394,7 @@ class Component(
                                         val name = generateName()
                                         val child = view.children.last()
                                         Log.d("layout", "activity_${id}_${a["adapter"] ?: "adapter"}")
+                                        Log.d("data", "added : $a")
                                         background {
                                             initialize(
                                                 child,
@@ -409,12 +413,10 @@ class Component(
                         value.forEachIndexed { index, adapter ->
                             val child = view.getChildAt(index)
                             if (child != null) {
-                                val tag = child.tag
-                                if(tag is String) {
-                                    localCache[tag] = Local(
-                                        state = adapter,
-                                        index = index.toDouble()
-                                    )
+                                val component = observers[child]
+                                if(component != null) {
+                                    component.local.state = adapter
+                                    component.local.index = index.toDouble()
                                 }
                             }
                         }
@@ -520,29 +522,29 @@ class Component(
         },
         "absolute" to { value, last ->
             if (value is Map<*, *>) {
-                var layoutParams = RelativeLayout.LayoutParams(
+                val layoutParams = RelativeLayout.LayoutParams(
                     view.layoutParams.width,
                     view.layoutParams.height
                 )
-                var top = value["top"] as? Double
+                val top = value["top"] as? Double
                 if (top != null) {
                     layoutParams.addRule(RelativeLayout.ALIGN_PARENT_TOP)
                     layoutParams.topMargin =
                         (top * view.context.resources.displayMetrics.density).toInt()
                 }
-                var right = value["right"] as? Double
+                val right = value["right"] as? Double
                 if (right != null) {
                     layoutParams.addRule(RelativeLayout.ALIGN_PARENT_RIGHT)
                     layoutParams.rightMargin =
                         (right * view.context.resources.displayMetrics.density).toInt()
                 }
-                var bottom = value["bottom"] as? Double
+                val bottom = value["bottom"] as? Double
                 if (bottom != null) {
                     layoutParams.addRule(RelativeLayout.ALIGN_PARENT_BOTTOM)
                     layoutParams.bottomMargin =
                         (bottom * view.context.resources.displayMetrics.density).toInt()
                 }
-                var left = value["left"] as? Double
+                val left = value["left"] as? Double
                 if (left != null) {
                     layoutParams.addRule(RelativeLayout.ALIGN_PARENT_LEFT)
                     layoutParams.leftMargin =
@@ -559,7 +561,7 @@ class Component(
                 val to = (value * view.context.resources.displayMetrics.density).toInt()
                 if(last != null) {
                     val from = layoutParams.width
-                    animations.add {
+                    animate {
                         layoutParams.width = (from + (it * (to - from))).toInt()
                         view.layoutParams = layoutParams
                     }
@@ -577,7 +579,7 @@ class Component(
                 val to = (value * view.context.resources.displayMetrics.density).toInt()
                 if(last != null) {
                     val from = layoutParams.height
-                    animations.add {
+                    animate {
                         layoutParams.height = (from + (it * (to - from))).toInt()
                         view.layoutParams = layoutParams
                     }
@@ -593,11 +595,9 @@ class Component(
     )
 
     fun set(key: String, value: Any?) {
-        val cache = element_cache[view] ?: mutableMapOf()
-        val prev = cache[key]
-        if (!cache.containsKey(key) || prev != value) {
-            cache[key] = value
-            element_cache[view] = cache
+        val prev = element_cache[key]
+        if (!element_cache.containsKey(key) || prev != value) {
+            element_cache[key] = value
             val handler = handlers[key]
             if (handler != null) {
                 handler(value, prev)
@@ -621,7 +621,6 @@ fun getAllViewsWithID(view: View): List<View> {
     }
 }
 
-var last_event = System.currentTimeMillis()
 fun isReady(): Boolean {
     val now = System.currentTimeMillis()
     if (last_event + TIMEOUT * 2 <= now) {
@@ -631,8 +630,15 @@ fun isReady(): Boolean {
     return false
 }
 
+fun getLocalCache(view : View) : Local? {
+    return observers[view]?.local
+}
+
+fun getElementCache(view : View) : MutableMap<String, Any?>? {
+    return observers[view]?.element_cache
+}
+
 fun initialize(root: View, key: String, local: Local) {
-    localCache[key] = local
     getAllViewsWithID(root).forEach { view ->
         view.tag = key
         val id = view.id
@@ -696,10 +702,9 @@ fun initialize(root: View, key: String, local: Local) {
                 if (onChange != null) {
                     if (view is CheckBox) {
                         view.setOnCheckedChangeListener { _, value ->
-                            val cache = element_cache[view] ?: mutableMapOf()
-                            if (cache["value"] != value) {
+                            val cache = getElementCache(view)
+                            if (cache != null && cache["value"] != value) {
                                 cache["value"] = value
-                                element_cache[view] = cache
                                 val local = getLocalCache(view)
                                 onChange.invoke(
                                     value,
@@ -718,16 +723,15 @@ fun initialize(root: View, key: String, local: Local) {
                                 position: Int,
                                 _id: Long
                             ) {
-                                val data = element_cache[view]?.get("data")
+                                val data = getElementCache(view)?.get("data")
                                 if (data is List<*>) {
                                     val map = data[position]
                                     if (map is Map<*, *>) {
                                         val key = getIdentifier(map)
                                         if (key is String) {
-                                            val cache = element_cache[view] ?: mutableMapOf()
-                                            if (cache.get("value") != key) {
+                                            val cache = getElementCache(view)
+                                            if (cache != null && cache["value"] != key) {
                                                 cache["value"] = key
-                                                element_cache[view] = cache
                                                 val local = getLocalCache(view)
                                                 onChange.invoke(
                                                     key,
@@ -762,8 +766,8 @@ fun initialize(root: View, key: String, local: Local) {
                                 count: Int
                             ) {
                                 val value = s.toString()
-                                val cache = element_cache[view]
-                                if (cache?.get("value") != value) {
+                                val cache = getElementCache(view)
+                                if (cache != null && cache["value"] != value) {
                                     val local = getLocalCache(view)
                                     onChange.invoke(
                                         value,
@@ -804,15 +808,13 @@ fun initialize(root: View, key: String, local: Local) {
                     }
                 }
             }
-            val local = getLocalCache(view)
             val onInit = event.onInit
             if(onInit != null) {
-                onInit.invoke(mapOf<String, Any>(), local?.state, local?.index ?: -1.0)
+                onInit.invoke(mapOf<String, Any>(), local.state, local.index ?: -1.0)
                 Log.d("update", "onInit")
             }
             if (event.observe != null) {
-                observers[id] = (observers[id] ?: mutableListOf())
-                observers[id]?.add(view)
+                observers[view] = Component(view, local)
             }
         }
     }
@@ -822,34 +824,14 @@ fun initialize(root: View, key: String, local: Local) {
 fun updateAll(who : String) {
     Log.d("update", who)
 
-    animations = mutableListOf()
-
-    for (list in observers.toMap()) {
-        for (view in list.value.toList()) {
-            val local = getLocalCache(view)
-            events[view.id]?.observe?.invoke(
-                Component((view)),
-                local?.state,
-                local?.index ?: -1.0
-            )
-        }
-    }
-
-    if(animations.isNotEmpty()) {
-        val temp = animations
-        val animator = ValueAnimator.ofFloat(0f, 1f)
-        animator.duration = TIMEOUT
-        animator.addUpdateListener {
-            temp.forEach { animation ->
-                animation(animator.animatedValue as Float)
-            }
-        }
-        main {
-            temp.forEach { animation ->
-                animation(0f)
-            }
-            animator.start()
-        }
+    for (observer in observers.toMap()) {
+        val view = observer.key
+        val local = getLocalCache(view)
+        events[view.id]?.observe?.invoke(
+            observer.value,
+            local?.state,
+            local?.index ?: -1.0
+        )
     }
 
     val prefs = MainActivity.activity.getSharedPreferences(
@@ -887,8 +869,6 @@ val SPEECH_RESULT_CODE = 6874
 class PollySpeechRecognition
 
 val speech = PollySpeechRecognition()
-
-var speechRecognitionCallback: ArgumentCallback? = null
 
 class DatePickerFragment(
         private val activity: Context,
