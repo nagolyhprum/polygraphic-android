@@ -111,20 +111,20 @@ fun onResize(id: Int, callback: PollyCallback) {
     }
 }
 
+val inputMethodService by lazy {
+    MainActivity.activity.getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
+}
+
+val layoutInflaterService by lazy {
+    MainActivity.activity.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+}
+
 fun showKeyboard(view: View) {
-    val inputMethodManager =
-        (view.context as MainActivity).getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    inputMethodManager.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
+    inputMethodService.showSoftInput(view, InputMethodManager.SHOW_IMPLICIT)
 }
 
 fun closeKeyboard(view: View) {
-    val inputMethodManager =
-        (view.context as MainActivity).getSystemService(Context.INPUT_METHOD_SERVICE) as InputMethodManager
-    inputMethodManager.hideSoftInputFromWindow(view.windowToken, 0)
-}
-
-fun getLayoutInflater(view: View): LayoutInflater {
-    return view.context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
+    inputMethodService.hideSoftInputFromWindow(view.windowToken, 0)
 }
 
 fun remove(view: View) {
@@ -236,7 +236,6 @@ class Component(
             }
         },
         "data" to { value ->
-            val inflater = getLayoutInflater(view)
             if (view is Spinner) {
                 if (value is List<*>) {
                     val adapter = object : SpinnerAdapter {
@@ -245,7 +244,7 @@ class Component(
                             convertView: View?,
                             parent: ViewGroup?
                         ): View {
-                            val view = inflater.inflate(
+                            val view = layoutInflaterService.inflate(
                                 view.context.resources.getIdentifier(
                                     "activity_option",
                                     "layout",
@@ -282,7 +281,7 @@ class Component(
                                 "layout",
                                 view.context.packageName
                             )
-                            val view = inflater.inflate(layout, null)
+                            val view = layoutInflaterService.inflate(layout, null)
                             val textview = view.findViewById<TextView>(
                                 view.context.resources.getIdentifier(
                                     "textview",
@@ -388,7 +387,7 @@ class Component(
                                             view.context.packageName
                                         )
                                         // TODO append to correct position
-                                        inflater.inflate(
+                                        layoutInflaterService.inflate(
                                             layout,
                                             view,
                                             true
