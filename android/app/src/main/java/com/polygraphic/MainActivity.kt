@@ -16,6 +16,14 @@ class MainActivity : AppCompatActivity() {
         activity = this
         tts = TextToSpeech(this) {}
         super.onCreate(savedInstanceState)
+        val prefs = getSharedPreferences(
+            "app",
+            Context.MODE_PRIVATE
+        )
+        val state = prefs.getString("state", null)
+        if(state != null) {
+            global = JSON.parse(state) ?: global
+        }
         addEvents()
         setContentView(R.layout.activity_main)
         initialize(findViewById(R.id.global), Local(
