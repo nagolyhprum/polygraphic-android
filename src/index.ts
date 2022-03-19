@@ -286,6 +286,15 @@ versionName "${manifest.version.name}"
 					name : "build.gradle",
 					template : "config"
 				});
+				inject({
+					files : config.files,
+					content : `
+<item name="colorAccent">${mapColor(manifest.background_color)}</item>
+<item name="android:statusBarColor" tools:targetApi="l">${mapColor(manifest.background_color)}</item>
+					`,
+					name : "themes.xml",
+					template : "theme"
+				});
 				config.files["android/app/src/main/res/values/strings.xml"] = `<?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">${manifest.name}</string>
