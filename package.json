@@ -28,7 +28,7 @@
   "dependencies": {
     "canvas": "^2.9.0",
     "parcel": "^2.3.2",
-    "polygraphic": "^0.58.0",
+    "polygraphic": "^0.59.1",
     "polylingual": "^0.22.2",
     "svg2vectordrawable": "^2.8.3",
     "yargs": "^17.3.1"

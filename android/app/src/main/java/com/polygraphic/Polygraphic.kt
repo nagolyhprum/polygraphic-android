@@ -350,54 +350,54 @@ class Component(
                             ?: mutableListOf<MutableMap<String, Any>>()
                         Log.d("data", "prev : $prev")
                         Log.d("data", "curr : $value")
-                        if (prev.map { it["adapter"] } != (value as List<Map<String, Any>>).map { it["adapter"] }) {
-                            // REMOVE
-                            prev.mapIndexed { index, item ->
-                                mapOf(
-                                    "item" to item,
-                                    "index" to index
-                                )
-                            }.filter { a ->
-                                !value.any { b ->
-                                    getIdentifier(a["item"]) == getIdentifier(b)
-                                }
-                            }.reversed().forEach { item ->
-                                val child =
-                                    view.children.iterator().asSequence().toList()[item["index"] as Int]
-                                remove(child)
-                                view.removeView(child)
-                                Log.d("data", "removed : $item")
+                        // REMOVE
+                        prev.mapIndexed { index, item ->
+                            mapOf(
+                                "item" to item,
+                                "index" to index
+                            )
+                        }.filter { a ->
+                            !value.any { b ->
+                                getIdentifier(a["item"]) == getIdentifier(b)
                             }
-                            // ADD
-                            value.forEachIndexed { index, a ->
-                                if (!prev.any { b ->
-                                        getIdentifier(a) == getIdentifier(b)
-                                    }) {
-                                    if (a is MutableMap<*, *>) {
-                                        val id = view.context.resources.getResourceEntryName(view.id)
-                                        val layout = view.context.resources.getIdentifier(
-                                            "${id}_${a["adapter"] ?: "adapter"}",
-                                            "layout",
-                                            view.context.packageName
-                                        )
-                                        // TODO append to correct position
-                                        layoutInflaterService.inflate(
-                                            layout,
-                                            view,
-                                            true
-                                        )
-                                        val child = view.children.last()
-                                        Log.d("layout", "activity_${id}_${a["adapter"] ?: "adapter"}")
-                                        Log.d("data", "added : $a")
-                                        background {
-                                            initialize(
-                                                child,
-                                                Local(
-                                                    state = a,
-                                                    index = index.toDouble()
-                                                )
+                        }.reversed().forEach { item ->
+                            val child =
+                                view.children.iterator().asSequence().toList()[item["index"] as Int]
+                            remove(child)
+                            view.removeView(child)
+                            Log.d("data", "removed : $item")
+                        }
+                        // ADD
+                        value.forEachIndexed { index, a ->
+                            if (!prev.any { b ->
+                                    getIdentifier(a) == getIdentifier(b)
+                                }) {
+                                if (a is MutableMap<*, *>) {
+                                    val id = view.context.resources.getResourceEntryName(view.id)
+                                    val layout = view.context.resources.getIdentifier(
+                                        "${id}_${a["adapter"] ?: "adapter"}",
+                                        "layout",
+                                        view.context.packageName
+                                    )
+                                    val child = layoutInflaterService.inflate(
+                                        layout,
+                                        null
+                                    )
+                                    if(index < view.childCount) {
+                                        view.addView(child, index)
+                                    } else {
+                                        view.addView(child)
+                                    }
+                                    Log.d("layout", "activity_${id}_${a["adapter"] ?: "adapter"}")
+                                    Log.d("data", "added : $a")
+                                    background {
+                                        initialize(
+                                            child,
+                                            Local(
+                                                state = a,
+                                                index = index.toDouble()
                                             )
-                                        }
+                                        )
                                     }
                                 }
                             }

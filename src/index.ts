@@ -180,7 +180,7 @@ export const android = <Global extends GlobalState>(app : ComponentFromConfig<Gl
 		template : "dependencies"
 	});
 	inject({
-		content : `"markdown" to { value, last ->
+		content : `"markdown" to { value ->
     if (view is TextView && value is String) {
         main {
             val markwon = io.noties.markwon.Markwon.create(view.context)
