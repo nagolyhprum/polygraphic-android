@@ -18,7 +18,7 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         addEvents()
         setContentView(R.layout.activity_main)
-        initialize(findViewById(R.id.global), "global", Local(
+        initialize(findViewById(R.id.global), Local(
             state = global,
             index = 0.0
         ))

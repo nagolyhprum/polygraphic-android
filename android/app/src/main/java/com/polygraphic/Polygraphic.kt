@@ -136,12 +136,6 @@ fun remove(view: View) {
     }
 }
 
-fun generateName(): String {
-    val a = Math.random().toBigDecimal().toPlainString().split(".").last().toLong().toString(16)
-    val b = System.currentTimeMillis().toString(16)
-    return "_$a$b"
-}
-
 fun getIdentifier(input : Any?) : Any? {
     if(input is Map<*, *>) {
         return input["key"] ?: input["id"]
@@ -205,7 +199,7 @@ class Component(
                 val direction = value["direction"]
                 if(name is String && direction is String) {
                     val animation = "${name}_${direction}"
-                    Log.d("animation", "${view.tag} - ${animation}")
+                    Log.d("animation", "${animation}")
                     animate { percent ->
                         val width = view.measuredWidth
                         if(animation == "opacity_in") {
@@ -392,14 +386,12 @@ class Component(
                                             view,
                                             true
                                         )
-                                        val name = generateName()
                                         val child = view.children.last()
                                         Log.d("layout", "activity_${id}_${a["adapter"] ?: "adapter"}")
                                         Log.d("data", "added : $a")
                                         background {
                                             initialize(
                                                 child,
-                                                name,
                                                 Local(
                                                     state = a,
                                                     index = index.toDouble()
@@ -641,9 +633,8 @@ fun getElementCache(view : View) : MutableMap<String, Any?>? {
     return observers[view]?.element_cache
 }
 
-fun initialize(root: View, key: String, local: Local) {
+fun initialize(root: View, local: Local) {
     getAllViewsWithID(root).forEach { view ->
-        view.tag = key
         val id = view.id
         val event = events[id]
         if (event != null) {
