@@ -354,7 +354,7 @@ versionName "${manifest.version.name}"
 			}
 			return props;
 		case "shadow":
-			props["android:elevation"] = "1dp";
+			props["android:elevation"] = "4dp";
 			return props;
 		case "round":
 		case "background": {
