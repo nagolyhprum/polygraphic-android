@@ -383,6 +383,7 @@ class Component(
                                         layout,
                                         null
                                     )
+                                    child.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                                     if(index < view.childCount) {
                                         view.addView(child, index)
                                     } else {
