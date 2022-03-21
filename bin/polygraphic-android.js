@@ -22,11 +22,11 @@ yargs.scriptName("polygraphic-android")
 		yargs.alias("o", "outDir");
 	}, async (argv) => {
 		try {
-            try {
-                await mkdir(argv.o, {
-                    recursive: true
-                });
-            } catch(e){}
+			try {
+				await mkdir(argv.o, {
+					recursive: true
+				});
+			} catch(e){}
 			const bundler = new Parcel({
 				entries: argv.path,
 				defaultConfig: "@parcel/config-default",
@@ -49,15 +49,18 @@ yargs.scriptName("polygraphic-android")
 			const output = await android(App)(state);
 			await Object.keys(output).reduce(async (promise, key) => {
 				await promise;
-                try {
-                    await mkdir(path.dirname(path.join(argv.o, key)), {
-                        recursive: true
-                    });
-                } catch(e) {}
 				try {
-					await writeFile(path.join(argv.o, key), output[key]);
+					await mkdir(path.dirname(path.join(argv.o, key)), {
+						recursive: true
+					});
+				} catch(e) {}
+				try {
+					const data = output[key];
+					if(data) {
+						await writeFile(path.join(argv.o, key), data);
+					}
 				} catch(e) {
-					console.log("failed for", key)
+					console.log("failed for", key);
 				}
 			}, Promise.resolve());
 		} catch(e) {
