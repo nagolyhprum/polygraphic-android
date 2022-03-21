@@ -9,7 +9,6 @@
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "prepublishOnly": "parcel build",
-    "build": "node bin/polygraphic-android build ../polygraphic-demo/src/todo/index.ts -o polygraphic-android",
     "tsc": "tsc"
   },
   "targets": {
