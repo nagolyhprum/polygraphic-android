@@ -577,7 +577,7 @@ const generateLayout = async (
 	const content = (await Promise.all(children.map(child => {
 		return generateLayout(child, global, local, config, tabs + "\t");
 	}))).join("\n");
-	if(name === "root" && !content) {
+	if(component.name === "root" && !content) {
 		return "";
 	}
 	return `${component.name === "root" ? "<?xml version=\"1.0\" encoding=\"utf-8\"?>\n" : ""}${tabs}<${name}\n\t${tabs}${
