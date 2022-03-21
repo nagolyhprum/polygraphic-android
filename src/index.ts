@@ -131,12 +131,13 @@ export const android = <Global extends GlobalState>(app : ComponentFromConfig<Gl
 	const state = execute(generated, {}) as Global;
 	state.features = ["picker.date", "speech.listen"];
 	const files = await getFilesInFolder(path.join(__dirname, "..", "android"));
+	const baseFolder = path.join(__dirname, "..");
 	const config : AndroidConfig = {
 		dependencies : new Set<string>([]),
 		files : await files.reduce(async (files, path) => {
 			return {
 				...await files,
-				[path] : await fs.readFile(path)
+				[path.slice(baseFolder.length + 1)] : await fs.readFile(path)
 			};
 		}, Promise.resolve({}))
 	};
