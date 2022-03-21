@@ -1,6 +1,6 @@
 {
   "name": "polygraphic-android",
-  "version": "1.0.0",
+  "version": "0.0.0",
   "description": "",
   "source": "src/index.ts",
   "main": "dist/index.js",
@@ -29,7 +29,6 @@
     "canvas": "^2.9.0",
     "parcel": "^2.3.2",
     "polygraphic": "^0.61.2",
-    "polylingual": "^0.22.2",
     "svg2vectordrawable": "^2.8.3",
     "yargs": "^17.3.1"
   },
