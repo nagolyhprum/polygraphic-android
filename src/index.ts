@@ -1,29 +1,9 @@
 import fs, { readFile } from "fs/promises";
 import path from "path";
-import { code, Component, ComponentFromConfig, GlobalState, kotlin, kotlinBundle, MATCH, ProgrammingLanguage, WRAP } from "polygraphic";
+import { compile, Component, ComponentFromConfig, EventConfig, execute, GlobalState, kotlin, kotlinBundle, MATCH, ProgrammingLanguage, WRAP } from "polygraphic";
 import svg2vectordrawable from "svg2vectordrawable";
 import { AndroidConfig } from "./types";
 import { createCanvas, loadImage } from "canvas";
-
-const speech = {
-	listen : () => {
-		// DO NOTHING
-	},
-	speak : () => {
-		// DO NOTHING
-	}
-};
-
-const moment = () => ({
-	format : () => "",
-	isSame : () => false
-});
-
-const picker = {
-	date : () => {
-		// DO NOTHING
-	}
-};
 
 const images = [{
 	name : "mdpi",
@@ -143,7 +123,12 @@ const scale = (input : string, percent : number) => {
         android:translateY="${height / 2 - height / 2 * percent}">` + input.slice(firstCloser + 1, lastOpener) + "</group>" + input.slice(lastOpener);
 };
 
-export const android = <Global extends GlobalState>(app : ComponentFromConfig<Global, Global>) => async (state : Global) => {
+export const android = <Global extends GlobalState>(app : ComponentFromConfig<Global, Global>) => async (
+	generateState : (config : (config : EventConfig<GlobalState, null, null>) => ProgrammingLanguage) => Global
+) => {
+	const dependencies = new Set<string>([]);
+	const generated = compile(generateState as unknown as (config : any) => ProgrammingLanguage, dependencies);
+	const state = execute(generated, {}) as Global;
 	state.features = ["picker.date", "speech.listen"];
 	const files = await getFilesInFolder("android");
 	const config : AndroidConfig = {
@@ -159,7 +144,7 @@ export const android = <Global extends GlobalState>(app : ComponentFromConfig<Gl
 		files : config.files,
 		name : "generated.kt",
 		template : "global",
-		content : `var global = ${kotlin(state as unknown as ProgrammingLanguage, "")}`,
+		content : `var global = ${kotlin(generated as unknown as ProgrammingLanguage, "")}`,
 	});
 	inject({
 		content : kotlinBundle(),
@@ -602,13 +587,7 @@ const handleEvents = (component : Component<any, any>, global : any, local : any
 		case "onBack": {
 			const onBack = component.onBack || [];
 			onBack.forEach((item : any) => {
-				const generated = code(item, config.dependencies, {
-					global,
-					local,
-					moment,
-					speech,
-					picker
-				});
+				const generated = compile(item, config.dependencies);
 				inject({
 					content : `
                         
@@ -628,13 +607,7 @@ ${kotlin(generated, "\t\t\t")}
 		}
 		case "funcs": {
 			const fun = component[key]?.map((item : any) => {
-				const generated = code(() => item, config.dependencies, {
-					global,
-					local,
-					moment,
-					speech,
-					picker
-				});
+				const generated = compile(() => item, config.dependencies);
 				return kotlin(generated, "\t\t\t");
 			}).join("\n");
 			if(fun) {
@@ -653,13 +626,7 @@ ${kotlin(generated, "\t\t\t")}
 		case "onInit":
 		case "onEnter": {
 			const fun = component[key]?.map((item : any) => {
-				const generated = code(item, config.dependencies, {
-					global,
-					local,
-					moment,
-					speech,
-					picker
-				});
+				const generated = compile(item, config.dependencies);
 				return kotlin(generated, "\t\t\t");
 			}).join("\n");
 			inject({

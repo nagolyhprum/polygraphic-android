@@ -26,7 +26,7 @@ import androidx.fragment.app.DialogFragment
 import java.util.*
 
 val events = mutableMapOf<Int, PollyEvent>()
-val observers = mutableMapOf<View, Component>()
+var observers = mapOf<View, Component>()
 var speechRecognitionCallback: ArgumentCallback? = null
 var last_event = System.currentTimeMillis()
 
@@ -128,19 +128,14 @@ fun closeKeyboard(view: View) {
 }
 
 fun remove(view: View) {
-    observers.remove(view)
+    observers = observers.filter {
+        it.key != view
+    }
     if (view is ViewGroup) {
         view.children.asSequence().toList().forEach {
             remove(it)
         }
     }
-}
-
-fun getIdentifier(input : Any?) : Any? {
-    if(input is Map<*, *>) {
-        return input["key"] ?: input["id"] ?: input["value"]
-    }
-    return null
 }
 
 fun getName(input : Any?) : Any? {
@@ -631,6 +626,9 @@ fun getElementCache(view : View) : MutableMap<String, Any?>? {
 }
 
 fun initialize(root: View, local: Local) {
+    observers = observers + mapOf(
+        root to Component(root, local)
+    )
     getAllViewsWithID(root).forEach { view ->
         val id = view.id
         val event = events[id]
@@ -798,7 +796,9 @@ fun initialize(root: View, local: Local) {
                 Log.d("update", "onInit")
             }
             if (event.observe != null) {
-                observers[view] = Component(view, local)
+                observers = observers + mapOf(
+                    view to Component(view, local)
+                )
             }
         }
     }
@@ -807,8 +807,7 @@ fun initialize(root: View, local: Local) {
 
 fun updateAll(who : String) {
     Log.d("update", who)
-
-    for (observer in observers.toMap()) {
+    observers.forEach { observer ->
         val view = observer.key
         events[view.id]?.observe?.invoke(
             observer.value,
@@ -816,7 +815,6 @@ fun updateAll(who : String) {
             observer.value.local.index
         )
     }
-
     val prefs = MainActivity.activity.getSharedPreferences(
         "app",
         Context.MODE_PRIVATE
