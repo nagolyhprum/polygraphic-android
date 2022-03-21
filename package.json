@@ -12,7 +12,10 @@
     "tsc": "tsc"
   },
   "targets": {
-    "types": false
+    "types": false,
+    "main": {
+      "context": "node"
+    }
   },
   "repository": {
     "type": "git",

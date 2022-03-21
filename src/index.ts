@@ -130,7 +130,7 @@ export const android = <Global extends GlobalState>(app : ComponentFromConfig<Gl
 	const generated = compile(generateState as unknown as (config : any) => ProgrammingLanguage, dependencies);
 	const state = execute(generated, {}) as Global;
 	state.features = ["picker.date", "speech.listen"];
-	const files = await getFilesInFolder(path.join(global.__dirname, "..", "android"));
+	const files = await getFilesInFolder(path.join(__dirname, "..", "android"));
 	const config : AndroidConfig = {
 		dependencies : new Set<string>([]),
 		files : await files.reduce(async (files, path) => {
