@@ -366,9 +366,6 @@ versionName "${manifest.version.name}"
 			return props;
 		case "name": {
 			const name = component[key];
-			if(name === "root") {
-				props["android:clickable"] = "true";
-			}
 			if(name === "scrollable") {
 				props["android:clipToPadding"] = "true";
 				props["android:clipToOutline"] = "true";
