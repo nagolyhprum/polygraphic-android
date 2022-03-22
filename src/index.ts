@@ -258,7 +258,10 @@ const handleProp = (
 ) => {
 	return keys(component).reduce(async (promise, key) => {
 		const props = await promise;
-		switch(key) {            
+		switch(key) {        
+		case "clickable":
+			props["android:clickable"] = `${component[key]}`;
+			return props;
 		case "manifest": {
 			const manifest = component[key];
 			if(manifest) {
