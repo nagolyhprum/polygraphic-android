@@ -1,6 +1,6 @@
 {
   "name": "polygraphic-android",
-  "version": "0.3.3",
+  "version": "0.4.0",
   "description": "",
   "source": "src/index.ts",
   "main": "dist/index.js",
