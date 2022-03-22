@@ -376,9 +376,9 @@ class Component(
                                     )
                                     val child = layoutInflaterService.inflate(
                                         layout,
-                                        null
+                                        view,
+                                        false
                                     )
-                                    child.layoutParams = ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.MATCH_PARENT)
                                     if(index < view.childCount) {
                                         view.addView(child, index)
                                     } else {
