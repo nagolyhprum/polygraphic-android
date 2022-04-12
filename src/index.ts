@@ -131,7 +131,6 @@ export const android = <Global extends GlobalState>(
 		const dependencies = new Set<string>([]);
 		const generated = compile(generateState as unknown as (config : any) => ProgrammingLanguage, dependencies);
 		const state = execute(generated, {}) as Global;
-		state.os = "android";
 		state.features = ["picker.date", "speech.listen"];
 		const files = await getFilesInFolder(path.join(__dirname, "..", "android"));
 		const baseFolder = path.join(__dirname, "..");
@@ -149,6 +148,12 @@ export const android = <Global extends GlobalState>(
 			name : "generated.kt",
 			template : "global",
 			content : `var global = ${kotlin(generated as unknown as ProgrammingLanguage, "")}`,
+		});
+		inject({
+			content : "global[\"os\"] = \"android\"",
+			files : config.files,
+			name : "generated.kt",
+			template : "event"
 		});
 		inject({
 			content : kotlinBundle(),
