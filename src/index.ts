@@ -123,50 +123,53 @@ const scale = (input : string, percent : number) => {
         android:translateY="${height / 2 - height / 2 * percent}">` + input.slice(firstCloser + 1, lastOpener) + "</group>" + input.slice(lastOpener);
 };
 
-export const android = <Global extends GlobalState>(app : ComponentFromConfig<Global, Global>) => async (
-	generateState : (config : (config : EventConfig<GlobalState, null, null>) => ProgrammingLanguage) => Global
-) => {
-	const dependencies = new Set<string>([]);
-	const generated = compile(generateState as unknown as (config : any) => ProgrammingLanguage, dependencies);
-	const state = execute(generated, {}) as Global;
-	state.features = ["picker.date", "speech.listen"];
-	const files = await getFilesInFolder(path.join(__dirname, "..", "android"));
-	const baseFolder = path.join(__dirname, "..");
-	const config : AndroidConfig = {
-		dependencies : new Set<string>([]),
-		files : await files.reduce(async (files, path) => {
-			return {
-				...await files,
-				[path.slice(baseFolder.length + 1)] : await fs.readFile(path)
-			};
-		}, Promise.resolve({}))
-	};
-	inject({
-		files : config.files,
-		name : "generated.kt",
-		template : "global",
-		content : `var global = ${kotlin(generated as unknown as ProgrammingLanguage, "")}`,
-	});
-	inject({
-		content : kotlinBundle(),
-		files : config.files,
-		name : "generated.kt",
-		template : "bundle"
-	});
-	inject({
-		content : "implementation \"com.android.volley:volley:1.2.1\"",
-		files : config.files,
-		name : "build.gradle",
-		template : "dependencies"
-	});
-	inject({
-		content : "implementation \"io.noties.markwon:core:4.6.2\"",
-		files : config.files,
-		name : "build.gradle",
-		template : "dependencies"
-	});
-	inject({
-		content : `"markdown" to { value ->
+export const android = <Global extends GlobalState>(
+	app : ComponentFromConfig<Global, Global>
+) => async (
+		generateState : (config : (config : EventConfig<GlobalState, null, null>) => ProgrammingLanguage) => Global
+	) => {
+		const dependencies = new Set<string>([]);
+		const generated = compile(generateState as unknown as (config : any) => ProgrammingLanguage, dependencies);
+		const state = execute(generated, {}) as Global;
+		state.os = "android";
+		state.features = ["picker.date", "speech.listen"];
+		const files = await getFilesInFolder(path.join(__dirname, "..", "android"));
+		const baseFolder = path.join(__dirname, "..");
+		const config : AndroidConfig = {
+			dependencies : new Set<string>([]),
+			files : await files.reduce(async (files, path) => {
+				return {
+					...await files,
+					[path.slice(baseFolder.length + 1)] : await fs.readFile(path)
+				};
+			}, Promise.resolve({}))
+		};
+		inject({
+			files : config.files,
+			name : "generated.kt",
+			template : "global",
+			content : `var global = ${kotlin(generated as unknown as ProgrammingLanguage, "")}`,
+		});
+		inject({
+			content : kotlinBundle(),
+			files : config.files,
+			name : "generated.kt",
+			template : "bundle"
+		});
+		inject({
+			content : "implementation \"com.android.volley:volley:1.2.1\"",
+			files : config.files,
+			name : "build.gradle",
+			template : "dependencies"
+		});
+		inject({
+			content : "implementation \"io.noties.markwon:core:4.6.2\"",
+			files : config.files,
+			name : "build.gradle",
+			template : "dependencies"
+		});
+		inject({
+			content : `"markdown" to { value ->
     if (view is TextView && value is String) {
         main {
             val markwon = io.noties.markwon.Markwon.create(view.context)
@@ -178,23 +181,23 @@ export const android = <Global extends GlobalState>(app : ComponentFromConfig<Gl
         }
     }
 }`,
-		files : config.files,
-		name : "polygraphic.kt",
-		template : "component.property"
-	});
-	const component = app({
-		global : state,
-		local : state,
-		parent : {
-			id : "global",
-			height : 0,
-			name : "root",
-			width : 0
-		}
-	});
-	config.files["android/app/src/main/res/layout/activity_main.xml"] = await generateLayout(component, state, state, config, "");
-	return config.files;
-};
+			files : config.files,
+			name : "polygraphic.kt",
+			template : "component.property"
+		});
+		const component = app({
+			global : state,
+			local : state,
+			parent : {
+				id : "global",
+				height : 0,
+				name : "root",
+				width : 0
+			}
+		});
+		config.files["android/app/src/main/res/layout/activity_main.xml"] = await generateLayout(component, state, state, config, "");
+		return config.files;
+	};
 
 const getTagName = (component : Component<any, any>) : string => {
 	switch(component.name) {
