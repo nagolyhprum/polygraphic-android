@@ -30,7 +30,7 @@
   "dependencies": {
     "canvas": "^2.9.0",
     "parcel": "^2.3.2",
-    "polygraphic": "^0.72.0",
+    "polygraphic": "^0.76.1",
     "svg2vectordrawable": "^2.8.3",
     "yargs": "^17.3.1"
   },
